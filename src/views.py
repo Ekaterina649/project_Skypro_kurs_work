@@ -63,4 +63,3 @@ def main_views(date_str: str) -> Dict[str, Any]:
         logger.error(f"Ошибка в main_page: {str(e)}")
         return {"error": str(e)}
 
-print(main_views("2018-01-10 21:31:46"))

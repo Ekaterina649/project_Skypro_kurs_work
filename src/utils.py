@@ -8,7 +8,7 @@ import pandas as pd
 import requests
 from dotenv import load_dotenv
 
-from config import LOGS_DIR, SETTINGS_PATH
+from src.config import LOGS_DIR, SETTINGS_PATH
 
 load_dotenv()
 
