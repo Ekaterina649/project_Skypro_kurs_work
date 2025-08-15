@@ -3,8 +3,8 @@ import logging
 from datetime import datetime
 from typing import Any, Dict, List
 
-from config import DATA_DIR, LOGS_DIR
-from utils import reader_from_excel
+from src.config import DATA_DIR, LOGS_DIR
+from src.utils import reader_from_excel
 
 logger = logging.getLogger("services")
 logger.setLevel(logging.DEBUG)
