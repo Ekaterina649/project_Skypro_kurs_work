@@ -19,10 +19,11 @@ file_formatter = logging.Formatter("%(asctime)s - %(module)s - %(levelname)s - %
 file_handler.setFormatter(file_formatter)
 logger.addHandler(file_handler)
 
+
 def reader_from_excel(filepath):
     """Читает файл Excel и возвращает список транзакций в виде словарей."""
     logger.debug("Чтение файла excel")
-    dataframe = pd.read_excel(filepath,engine="openpyxl")
+    dataframe = pd.read_excel(filepath, engine="openpyxl")
     return dataframe.to_dict("records")
 
 
@@ -73,21 +74,17 @@ def get_cards_summary(transactions: List[Dict[str, Any]]) -> List[Dict[str, Any]
             continue
         if operation.get("Категория") in ("Пополнения", "Переводы"):
             continue
-        if operation.get('Номер карты') is None:
+        if operation.get("Номер карты") is None:
             continue
-        last_digits = str(operation.get('Номер карты','???'))
-        total_spent = abs(float(operation.get('Сумма платежа',0)))
+        last_digits = str(operation.get("Номер карты", "???"))
+        total_spent = abs(float(operation.get("Сумма платежа", 0)))
         if last_digits not in cards:
             cards[last_digits] = 0
         cards[last_digits] += total_spent
     result = [
-            {
-                "last_digits": last_digits,
-                "total_spent": total_spent,
-                "cashback": round(total_spent/100,2)
-            }
-            for last_digits, total_spent in cards.items()
-        ]
+        {"last_digits": last_digits, "total_spent": total_spent, "cashback": round(total_spent / 100, 2)}
+        for last_digits, total_spent in cards.items()
+    ]
     logger.debug(f"Сводка по картам: {result}")
     return result
 
@@ -96,23 +93,26 @@ def get_top_transactions(transactions: List[Dict[str, Any]]) -> List[Dict[str, A
     """Возвращает топ-5 транзакций по сумме платежа."""
     df = pd.DataFrame(transactions)
     df = df[df["Статус"] == "OK"]
-    df= df[df["Сумма платежа"] < 0]
-    df_sorted = df.sort_values(by='Сумма платежа').head(5)
+    df = df[df["Сумма платежа"] < 0]
+    df_sorted = df.sort_values(by="Сумма платежа").head(5)
     top_operations = []
     for _, transaction in df_sorted.iterrows():
-        top_operations.append({
-            "date": pd.to_datetime(transaction["Дата операции"]).strftime("%d.%m.%Y"),
-            "amount": round(abs(transaction["Сумма платежа"]), 2),
-            "category": transaction.get("Категория", ""),
-            "description": transaction.get("Описание", "")
-        })
+        top_operations.append(
+            {
+                "date": pd.to_datetime(transaction["Дата операции"]).strftime("%d.%m.%Y"),
+                "amount": round(abs(transaction["Сумма платежа"]), 2),
+                "category": transaction.get("Категория", ""),
+                "description": transaction.get("Описание", ""),
+            }
+        )
     logger.debug(f"Топ-5 расходов: {top_operations}")
     return top_operations
+
 
 def load_user_settings() -> Dict[str, List[str]]:
     """Загружает пользовательские настройки из user_settings.json."""
     try:
-        with open(SETTINGS_PATH,'r',encoding='utf-8') as file:
+        with open(SETTINGS_PATH, "r", encoding="utf-8") as file:
             settings = json.load(file)
         logger.debug(f"Настройки загружены: {settings}")
         return settings
@@ -129,7 +129,7 @@ def get_currency_rates(user_settings: Dict[str, List[str]]) -> List[Dict[str, An
     EXCHANGE_API_KEY = os.getenv("EXCHANGE_API_KEY")
 
     result = []
-    currencies = [c for c in user_settings.get('user_currencies', ['USD', 'EUR']) if c != "RUB"]
+    currencies = [c for c in user_settings.get("user_currencies", ["USD", "EUR"]) if c != "RUB"]
 
     if not currencies:
         return [{"currency": "RUB", "rate": 1.0}]
@@ -156,10 +156,7 @@ def get_currency_rates(user_settings: Dict[str, List[str]]) -> List[Dict[str, An
                 if rub_to_curr:
                     # Конвертируем в 1 USD = Y RUB (1 / 0.0134 ≈ 74.63)
                     curr_to_rub = round(1 / float(rub_to_curr), 2)
-                    result.append({
-                        "currency": currency,
-                        "rate": curr_to_rub
-                    })
+                    result.append({"currency": currency, "rate": curr_to_rub})
                 else:
                     logger.warning(f"No rate for {currency}")
                     result.append({"currency": currency, "rate": 0.0})
@@ -172,7 +169,7 @@ def get_currency_rates(user_settings: Dict[str, List[str]]) -> List[Dict[str, An
         result = [{"currency": c, "rate": 0.0} for c in currencies] + [{"currency": "RUB", "rate": 1.0}]
 
     logger.info(f"Result: {result}")
-    return sorted(result, key=lambda x: x['currency'])
+    return sorted(result, key=lambda x: x["currency"])
 
 
 def get_stock_prices(user_stocks: Dict[str, List[str]]) -> List[Dict[str, Any]]:
@@ -181,7 +178,7 @@ def get_stock_prices(user_stocks: Dict[str, List[str]]) -> List[Dict[str, Any]]:
     STOCK_API_URL = os.getenv("STOCK_API_URL")
 
     result = []
-    stocks = user_stocks.get('user_stocks', [])
+    stocks = user_stocks.get("user_stocks", [])
 
     for symbol in stocks:
         try:
@@ -204,12 +201,9 @@ def get_stock_prices(user_stocks: Dict[str, List[str]]) -> List[Dict[str, Any]]:
 
             latest_timestamp = max(time_series.keys())
             latest_data = time_series[latest_timestamp]
-            latest_price = round(float(latest_data['4. close']), 2)
+            latest_price = round(float(latest_data["4. close"]), 2)
 
-            result.append({
-                "stock": symbol,
-                "price": latest_price
-            })
+            result.append({"stock": symbol, "price": latest_price})
 
         except requests.exceptions.RequestException as e:
             logger.error(f"Ошибка при запросе акции {symbol}: {str(e)}")
@@ -221,17 +215,15 @@ def get_stock_prices(user_stocks: Dict[str, List[str]]) -> List[Dict[str, Any]]:
     return result
 
 
-
-#reader = reader_from_excel('C:/Users/Huawei/PycharmProjects/PythonProject_kurs_work/data/operations.xlsx')
-#trans = get_greeting(reader,'10.01.2018 13:00:04')
-#filter = get_cards_summary(trans)
-#top = get_top_transactions(trans)
-#cur = load_user_settings()
-#print(top)
-#print()
-#print()
-#print(trans)
-#print(load_user_settings())
-#print(get_currency_rates(cur))
-#print(get_stock_prices(cur))
-
+# reader = reader_from_excel('C:/Users/Huawei/PycharmProjects/PythonProject_kurs_work/data/operations.xlsx')
+# trans = get_greeting(reader,'10.01.2018 13:00:04')
+# filter = get_cards_summary(trans)
+# top = get_top_transactions(trans)
+# cur = load_user_settings()
+# print(top)
+# print()
+# print()
+# print(trans)
+# print(load_user_settings())
+# print(get_currency_rates(cur))
+# print(get_stock_prices(cur))

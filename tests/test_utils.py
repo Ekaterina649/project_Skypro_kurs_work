@@ -1,4 +1,3 @@
-
 from unittest.mock import patch, Mock
 
 import pandas as pd
@@ -10,8 +9,11 @@ from src.utils import (
     get_cards_summary,
     get_top_transactions,
     get_stock_prices,
-    get_currency_rates, reader_from_excel,
+    get_currency_rates,
+    reader_from_excel,
 )
+
+
 @pytest.fixture
 def sample_excel_file(tmp_path):
     """Создает временный Excel-файл с тестовыми данными."""
@@ -46,12 +48,14 @@ def sample_excel_file(tmp_path):
     df.to_excel(file_path, index=False, engine="openpyxl")
     return file_path
 
+
 def test_reader_from_excel(sample_excel_file):
     """Тест чтения Excel-файла."""
     result = reader_from_excel(sample_excel_file)
     assert isinstance(result, list)
     assert len(result) == 3
     assert result[0]["Дата операции"] == "01.01.2023 12:00:00"
+
 
 @pytest.fixture
 def sample_transactions():
@@ -75,6 +79,7 @@ def sample_transactions():
         },
     ]
 
+
 @pytest.mark.parametrize(
     "date_str, expected_greeting",
     [
@@ -88,11 +93,13 @@ def test_get_time_based_greeting(date_str, expected_greeting):
     """Тест приветствия в зависимости от времени."""
     assert get_time_based_greeting(date_str) == expected_greeting
 
+
 def test_get_greeting(sample_transactions):
     """Тест фильтрации транзакций по дате."""
     date_str = "10.01.2023 00:00:00"
     result = get_greeting(sample_transactions, date_str)
     assert len(result) == 2
+
 
 def test_get_cards_summary(sample_transactions):
     """Тест формирования сводки по картам."""
@@ -102,12 +109,14 @@ def test_get_cards_summary(sample_transactions):
     assert result[0]["total_spent"] == 1000.0
     assert result[0]["cashback"] == 10.0
 
+
 def test_get_top_transactions(sample_transactions):
     """Тест получения топ-5 транзакций."""
     result = get_top_transactions(sample_transactions)
     assert len(result) == 2
     assert result[0]["amount"] == 1000.0
     assert result[1]["amount"] == 500.0
+
 
 @patch("src.utils.requests.get")
 def test_get_currency_rates(mock_get):
@@ -127,6 +136,7 @@ def test_get_currency_rates(mock_get):
     assert result[0]["rate"] == round(1 / 0.011, 2)
     assert result[1]["currency"] == "USD"
     assert result[1]["rate"] == round(1 / 0.013, 2)
+
 
 @patch("src.utils.requests.get")
 def test_get_stock_prices(mock_get):

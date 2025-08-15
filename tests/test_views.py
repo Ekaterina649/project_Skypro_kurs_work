@@ -4,6 +4,7 @@ from unittest.mock import patch, MagicMock
 
 from src.views import main_views
 
+
 @pytest.fixture
 def mock_transactions():
     return [
@@ -17,12 +18,14 @@ def mock_transactions():
         }
     ]
 
+
 @pytest.fixture
 def mock_user_settings():
     return {
         "user_currencies": ["USD", "EUR"],
         "user_stocks": ["AAPL", "GOOGL"],
     }
+
 
 @patch("src.views.load_user_settings")
 @patch("src.views.get_stock_prices")
