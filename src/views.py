@@ -1,10 +1,9 @@
 import logging
 from datetime import datetime
-from pathlib import Path
 from typing import Dict, Any
 
-from config import DATA_DIR, LOGS_DIR
-from utils import reader_from_excel, get_greeting, get_cards_summary, get_top_transactions, load_user_settings, \
+from src.config import DATA_DIR, LOGS_DIR
+from src.utils import reader_from_excel, get_greeting, get_cards_summary, get_top_transactions, load_user_settings, \
     get_currency_rates, get_stock_prices, get_time_based_greeting
 
 logger = logging.getLogger("views")
