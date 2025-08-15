@@ -213,6 +213,3 @@ def get_stock_prices(user_stocks: Dict[str, List[str]]) -> List[Dict[str, Any]]:
             result.append({"stock": symbol, "price": None})
 
     return result
-
-
-

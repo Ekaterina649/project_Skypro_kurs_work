@@ -1,18 +1,10 @@
 import logging
 from datetime import datetime
-from typing import Dict, Any
+from typing import Any, Dict
 
 from src.config import DATA_DIR, LOGS_DIR
-from src.utils import (
-    reader_from_excel,
-    get_greeting,
-    get_cards_summary,
-    get_top_transactions,
-    load_user_settings,
-    get_currency_rates,
-    get_stock_prices,
-    get_time_based_greeting,
-)
+from src.utils import (get_cards_summary, get_currency_rates, get_greeting, get_stock_prices, get_time_based_greeting,
+                       get_top_transactions, load_user_settings, reader_from_excel)
 
 logger = logging.getLogger("views")
 logger.setLevel(logging.DEBUG)
@@ -69,4 +61,3 @@ def main_views(date_str: str) -> Dict[str, Any]:
     except Exception as e:
         logger.error(f"Ошибка в main_page: {str(e)}")
         return {"error": str(e)}
-
