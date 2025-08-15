@@ -215,15 +215,4 @@ def get_stock_prices(user_stocks: Dict[str, List[str]]) -> List[Dict[str, Any]]:
     return result
 
 
-# reader = reader_from_excel('C:/Users/Huawei/PycharmProjects/PythonProject_kurs_work/data/operations.xlsx')
-# trans = get_greeting(reader,'10.01.2018 13:00:04')
-# filter = get_cards_summary(trans)
-# top = get_top_transactions(trans)
-# cur = load_user_settings()
-# print(top)
-# print()
-# print()
-# print(trans)
-# print(load_user_settings())
-# print(get_currency_rates(cur))
-# print(get_stock_prices(cur))
+
