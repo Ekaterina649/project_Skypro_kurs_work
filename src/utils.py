@@ -93,8 +93,8 @@ def get_top_transactions(transactions: List[Dict[str, Any]]) -> List[Dict[str, A
     """Возвращает топ-5 транзакций по сумме платежа."""
     df = pd.DataFrame(transactions)
     df = df[df["Статус"] == "OK"]
-    df = df[df["Сумма платежа"] < 0]
-    df_sorted = df.sort_values(by="Сумма платежа").head(5)
+    df["Абсолютная сумма"] = df["Сумма платежа"].abs()
+    df_sorted = df.sort_values(by="Абсолютная сумма", ascending=False).head(5)
     top_operations = []
     for _, transaction in df_sorted.iterrows():
         top_operations.append(

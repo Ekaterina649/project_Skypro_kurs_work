@@ -69,3 +69,4 @@ def main_views(date_str: str) -> Dict[str, Any]:
     except Exception as e:
         logger.error(f"Ошибка в main_page: {str(e)}")
         return {"error": str(e)}
+
