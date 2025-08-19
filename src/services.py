@@ -68,9 +68,3 @@ def search_transactions(data: List[Dict[str, Any]], search_query: str) -> str:
     return json.dumps(results, ensure_ascii=False, default=str)
 
 
-filepath = DATA_DIR / "operations.xlsx"
-transactions = reader_from_excel(filepath)
-file = analyze_cashback_categories(transactions, 2018, 1)
-trans = search_transactions(transactions, "Топливо")
-print(file)
-print(trans)

@@ -1,17 +1,10 @@
-from unittest.mock import patch, Mock
+from unittest.mock import Mock, patch
 
 import pandas as pd
 import pytest
 
-from src.utils import (
-    get_time_based_greeting,
-    get_greeting,
-    get_cards_summary,
-    get_top_transactions,
-    get_stock_prices,
-    get_currency_rates,
-    reader_from_excel,
-)
+from src.utils import (get_cards_summary, get_currency_rates, get_greeting, get_stock_prices, get_time_based_greeting,
+                       get_top_transactions, reader_from_excel)
 
 
 @pytest.fixture
