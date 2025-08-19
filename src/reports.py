@@ -89,4 +89,3 @@ def spending_by_category(transactions: pd.DataFrame, category: str, date: Option
 
     logger.debug(f"Найдено {len(filtered)} транзакций по категории '{category}'")
     return filtered
-

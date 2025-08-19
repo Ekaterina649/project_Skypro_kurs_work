@@ -3,8 +3,16 @@ from datetime import datetime
 from typing import Any, Dict
 
 from src.config import DATA_DIR, LOGS_DIR
-from src.utils import (get_cards_summary, get_currency_rates, get_greeting, get_stock_prices, get_time_based_greeting,
-                       get_top_transactions, load_user_settings, reader_from_excel)
+from src.utils import (
+    get_cards_summary,
+    get_currency_rates,
+    get_greeting,
+    get_stock_prices,
+    get_time_based_greeting,
+    get_top_transactions,
+    load_user_settings,
+    reader_from_excel,
+)
 
 logger = logging.getLogger("views")
 logger.setLevel(logging.DEBUG)
@@ -21,32 +29,42 @@ def main_views(date_str: str) -> Dict[str, Any]:
     :return: JSON-ответ (dict)
     """
     try:
-        # 1. Загружаем все транзакции
+        # Загружаем все транзакции
         filepath = DATA_DIR / "operations.xlsx"
         transactions = reader_from_excel(filepath)
 
-        # 2. Фильтруем по дате и выводим приветствие
-        # преобразуем дату в формат "DD.MM.YYYY HH:MM:SS", чтобы get_greeting понимала
+        # Преобразуем дату в формат "DD.MM.YYYY HH:MM:SS"
         date_for_filter = datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S").strftime("%d.%m.%Y %H:%M:%S")
+
+        # Приветствие
         greeting_user = get_time_based_greeting(date_for_filter)
+
+        # Фильтрация транзакций
         filtered_transactions = get_greeting(transactions, date_for_filter)
 
-        # 3. Считаем сводку по картам
+        # Если за выбранный период нет данных
+        if not filtered_transactions:
+            return {
+                "greeting": greeting_user,
+                "message": f"За выбранный период ({date_for_filter}) транзакций не найдено.",
+            }
+
+        # Считаем сводку по картам
         cards_summary = get_cards_summary(filtered_transactions)
 
-        # 4. Определяем топ-5 расходов
+        # Топ-5 расходов
         top_transactions = get_top_transactions(filtered_transactions)
 
-        # 5. Загружаем настройки пользователя
+        # Настройки пользователя
         user_settings = load_user_settings()
 
-        # 6. Получаем курсы валют
+        # Курсы валют
         currency_rates = get_currency_rates(user_settings)
 
-        # 7. Получаем цены акций
+        # Цены акций
         stock_prices = get_stock_prices(user_settings)
 
-        # 8. Собираем результат
+        # Собираем результат
         result = {
             "greeting": greeting_user,
             "cards": cards_summary,

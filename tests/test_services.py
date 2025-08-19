@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import pytest
 
@@ -46,19 +46,22 @@ def empty_transactions() -> List[Dict[str, Any]]:
     [
         (2018, 1, {"Топливо": 100, "Супермаркеты": 50}),
         (2018, 2, {"Топливо": 80}),
-        (2019, 1, {}),
+        (2019, 1, None),  # теперь ожидаем None для пустого результата
     ],
 )
 def test_analyze_cashback_categories(sample_transactions, year, month, expected):
     """Параметризованный тест для analyze_cashback_categories"""
     result = analyze_cashback_categories(sample_transactions, year, month)
-    assert json.loads(result) == expected
+    if expected is None:
+        assert result is None
+    else:
+        assert json.loads(result) == expected
 
 
 def test_analyze_cashback_categories_empty(empty_transactions):
     """Тест с пустыми входными данными"""
     result = analyze_cashback_categories(empty_transactions, 2018, 1)
-    assert result == "{}"
+    assert result is None  # пустой словарь -> None
 
 
 @pytest.mark.parametrize(

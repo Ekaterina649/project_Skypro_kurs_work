@@ -14,7 +14,7 @@ file_handler.setFormatter(file_formatter)
 logger.addHandler(file_handler)
 
 
-def analyze_cashback_categories(data: List[Dict[str, Any]], year: int, month: int) -> str:
+def analyze_cashback_categories(data: List[Dict[str, Any]], year: int, month: int) -> None:
     """Анализирует выгодность категорий повышенного кешбэка за указанный месяц и год."""
     logger.debug(f"Начало анализа кешбэка за {month}.{year}. Всего транзакций: {len(data)}")
     cashback_by_category = {}
@@ -45,6 +45,8 @@ def analyze_cashback_categories(data: List[Dict[str, Any]], year: int, month: in
             cashback_by_category[category] = cashback
 
     logger.info("Анализ завершен")
+    if not cashback_by_category:  # если словарь пустой
+        return None
     return json.dumps(cashback_by_category, ensure_ascii=False)
 
 
@@ -66,5 +68,3 @@ def search_transactions(data: List[Dict[str, Any]], search_query: str) -> str:
             found_count += 1
     logger.info(f"Поиск завершен. Найдено совпадений: {found_count}")
     return json.dumps(results, ensure_ascii=False, default=str)
-
-
