@@ -14,7 +14,7 @@ file_handler.setFormatter(file_formatter)
 logger.addHandler(file_handler)
 
 
-def analyze_cashback_categories(data: List[Dict[str, Any]], year: int, month: int) -> None:
+def analyze_cashback_categories(data: List[Dict[str, Any]], year: int, month: int) -> str | None:
     """Анализирует выгодность категорий повышенного кешбэка за указанный месяц и год."""
     logger.debug(f"Начало анализа кешбэка за {month}.{year}. Всего транзакций: {len(data)}")
     cashback_by_category = {}
