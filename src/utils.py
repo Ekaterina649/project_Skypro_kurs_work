@@ -2,7 +2,7 @@ import json
 import logging
 import os
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union, cast
 
 import pandas as pd
 import requests
@@ -20,11 +20,12 @@ file_handler.setFormatter(file_formatter)
 logger.addHandler(file_handler)
 
 
-def reader_from_excel(filepath):
+def reader_from_excel(filepath: str) -> List[Dict[str, Any]]:
     """Читает файл Excel и возвращает список транзакций в виде словарей."""
     logger.debug("Чтение файла excel")
     dataframe = pd.read_excel(filepath, engine="openpyxl")
-    return dataframe.to_dict("records")
+    # Исправление: явное приведение типа
+    return cast(List[Dict[str, Any]], dataframe.to_dict("records"))
 
 
 def get_time_based_greeting(date_str: str) -> str:
@@ -53,7 +54,7 @@ def get_time_based_greeting(date_str: str) -> str:
 def get_greeting(transactions: List[Dict[str, Any]], date_str: str) -> List[Dict[str, Any]]:
     """Фильтрует транзакции с начала месяца до указанной даты."""
     date = datetime.strptime(date_str, "%d.%m.%Y %H:%M:%S").date()
-    start_month = date.replace(day=1)  # Первое число месяца
+    start_month = date.replace(day=1)
 
     filtered_transactions = []
     for operation in transactions:
@@ -68,7 +69,7 @@ def get_greeting(transactions: List[Dict[str, Any]], date_str: str) -> List[Dict
 
 def get_cards_summary(transactions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """Возвращает список словарей с суммой расходов и кешбэком по каждой карте."""
-    cards = {}
+    cards: Dict[str, float] = {}
     for operation in transactions:
         if operation.get("Статус") != "OK":
             continue
@@ -79,7 +80,7 @@ def get_cards_summary(transactions: List[Dict[str, Any]]) -> List[Dict[str, Any]
         last_digits = str(operation.get("Номер карты", "???"))
         total_spent = abs(float(operation.get("Сумма платежа", 0)))
         if last_digits not in cards:
-            cards[last_digits] = 0
+            cards[last_digits] = 0.0
         cards[last_digits] += total_spent
     result = [
         {"last_digits": last_digits, "total_spent": total_spent, "cashback": round(total_spent / 100, 2)}
@@ -113,7 +114,7 @@ def load_user_settings() -> Dict[str, List[str]]:
     """Загружает пользовательские настройки из user_settings.json."""
     try:
         with open(SETTINGS_PATH, "r", encoding="utf-8") as file:
-            settings = json.load(file)
+            settings: Dict[str, List[str]] = json.load(file)
         logger.debug(f"Настройки загружены: {settings}")
         return settings
     except Exception as e:
@@ -134,50 +135,53 @@ def get_currency_rates(user_settings: Dict[str, List[str]]) -> List[Dict[str, An
     if not currencies:
         return [{"currency": "RUB", "rate": 1.0}]
 
+    # Запрос к API оборачиваем в try/except
     try:
         params = {
-            "access_key": EXCHANGE_API_KEY,
+            "access_key": EXCHANGE_API_KEY or "",  # Исправление: добавлено or ""
             "source": "RUB",
             "currencies": ",".join(currencies),
         }
 
-        response = requests.get(EXCHANGE_API_URL, params=params, timeout=10)
+        response = requests.get(EXCHANGE_API_URL or "", params=params, timeout=10)
         response.raise_for_status()
         data = response.json()
 
-        if data.get("success"):
-            quotes = data.get("quotes", {})
-            logger.debug(f"Quotes: {quotes}")
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Сетевая ошибка: {str(e)}")
+        return [{"currency": c, "rate": 0.0} for c in currencies] + [{"currency": "RUB", "rate": 1.0}]
 
-            for currency in currencies:
-                # Получаем курс вида 1 RUB = X USD (например: 0.0134)
-                rub_to_curr = quotes.get(f"RUB{currency}")
+    except ValueError as e:
+        logger.error(f"Ошибка JSON: {str(e)}")
+        return [{"currency": c, "rate": 0.0} for c in currencies] + [{"currency": "RUB", "rate": 1.0}]
 
-                if rub_to_curr:
-                    # Конвертируем в 1 USD = Y RUB (1 / 0.0134 ≈ 74.63)
-                    curr_to_rub = round(1 / float(rub_to_curr), 2)
-                    result.append({"currency": currency, "rate": curr_to_rub})
-                else:
-                    logger.warning(f"No rate for {currency}")
-                    result.append({"currency": currency, "rate": 0.0})
-        else:
-            logger.error(f"API error: {data.get('error', {}).get('info')}")
-            result = [{"currency": c, "rate": 0.0} for c in currencies] + [{"currency": "RUB", "rate": 1.0}]
+    if data.get("success"):
+        quotes = data.get("quotes", {})
 
-    except Exception as e:
-        logger.error(f"Error: {str(e)}")
-        result = [{"currency": c, "rate": 0.0} for c in currencies] + [{"currency": "RUB", "rate": 1.0}]
+        for currency in currencies:
+            rub_to_curr = quotes.get(f"RUB{currency}")
 
-    logger.info(f"Result: {result}")
+            if rub_to_curr:
+                curr_to_rub = round(1 / float(rub_to_curr), 2)
+                result.append({"currency": currency, "rate": curr_to_rub})
+            else:
+                logger.warning(f"Не найден курс для валюты {currency}")
+                result.append({"currency": currency, "rate": 0.0})
+    else:
+        logger.error(f"Ошибка API: {data.get('error', {}).get('info')}")
+        result = [{"currency": c, "rate": 0.0} for c in currencies]
+
+    result.append({"currency": "RUB", "rate": 1.0})
+    logger.info(f"Результат: {result}")
     return sorted(result, key=lambda x: x["currency"])
 
 
-def get_stock_prices(user_stocks: Dict[str, List[str]]) -> List[Dict[str, Any]]:
+def get_stock_prices(user_stocks: Dict[str, List[str]]) -> List[Dict[str, Union[str, float, None]]]:
     """Получает цены акций с Alpha Vantage."""
     STOCK_API_KEY = os.getenv("STOCK_API_KEY")
     STOCK_API_URL = os.getenv("STOCK_API_URL")
 
-    result = []
+    result: List[Dict[str, Union[str, float, None]]] = []
     stocks = user_stocks.get("user_stocks", [])
 
     for symbol in stocks:
@@ -187,29 +191,36 @@ def get_stock_prices(user_stocks: Dict[str, List[str]]) -> List[Dict[str, Any]]:
                 "symbol": symbol,
                 "interval": "5min",
                 "outputsize": "compact",
-                "apikey": STOCK_API_KEY,
+                "apikey": STOCK_API_KEY or "",  # Исправление: добавлено or ""
             }
 
-            response = requests.get(STOCK_API_URL, params=params, timeout=10)
+            response = requests.get(STOCK_API_URL or "", params=params, timeout=10)  # Исправление: добавлено or ""
             response.raise_for_status()
             data = response.json()
-
-            time_series = data.get("Time Series (5min)", {})
-            if not time_series:
-                logger.warning(f"Для акции {symbol} не найдены данные в ответе API")
-                continue
-
-            latest_timestamp = max(time_series.keys())
-            latest_data = time_series[latest_timestamp]
-            latest_price = round(float(latest_data["4. close"]), 2)
-
-            result.append({"stock": symbol, "price": latest_price})
 
         except requests.exceptions.RequestException as e:
             logger.error(f"Ошибка при запросе акции {symbol}: {str(e)}")
             result.append({"stock": symbol, "price": None})
-        except Exception as e:
-            logger.error(f"Ошибка {symbol}: {str(e)}")
+            continue
+        except ValueError as e:
+            logger.error(f"Ошибка JSON для акции {symbol}: {str(e)}")
+            result.append({"stock": symbol, "price": None})
+            continue
+
+        time_series = data.get("Time Series (5min)", {})
+        if not time_series:
+            logger.warning(f"Для акции {symbol} не найдены данные в ответе API")
+            result.append({"stock": symbol, "price": None})
+            continue
+
+        try:
+            latest_timestamp = max(time_series.keys())
+            latest_data = time_series[latest_timestamp]
+            latest_price = round(float(latest_data["4. close"]), 2)
+            result.append({"stock": symbol, "price": latest_price})
+
+        except (KeyError, ValueError) as e:
+            logger.error(f"Ошибка обработки данных для акции {symbol}: {str(e)}")
             result.append({"stock": symbol, "price": None})
 
     return result

@@ -3,16 +3,8 @@ from datetime import datetime
 from typing import Any, Dict
 
 from src.config import DATA_DIR, LOGS_DIR
-from src.utils import (
-    get_cards_summary,
-    get_currency_rates,
-    get_greeting,
-    get_stock_prices,
-    get_time_based_greeting,
-    get_top_transactions,
-    load_user_settings,
-    reader_from_excel,
-)
+from src.utils import (get_cards_summary, get_currency_rates, get_greeting, get_stock_prices, get_time_based_greeting,
+                       get_top_transactions, load_user_settings, reader_from_excel)
 
 logger = logging.getLogger("views")
 logger.setLevel(logging.DEBUG)
@@ -31,7 +23,7 @@ def main_views(date_str: str) -> Dict[str, Any]:
     try:
         # Загружаем все транзакции
         filepath = DATA_DIR / "operations.xlsx"
-        transactions = reader_from_excel(filepath)
+        transactions = reader_from_excel(str(filepath))
 
         # Преобразуем дату в формат "DD.MM.YYYY HH:MM:SS"
         date_for_filter = datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S").strftime("%d.%m.%Y %H:%M:%S")

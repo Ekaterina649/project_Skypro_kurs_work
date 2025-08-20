@@ -3,8 +3,7 @@ import logging
 from datetime import datetime
 from typing import Any, Dict, List
 
-from src.config import DATA_DIR, LOGS_DIR
-from src.utils import reader_from_excel
+from src.config import LOGS_DIR
 
 logger = logging.getLogger("services")
 logger.setLevel(logging.DEBUG)
@@ -17,11 +16,11 @@ logger.addHandler(file_handler)
 def analyze_cashback_categories(data: List[Dict[str, Any]], year: int, month: int) -> str | None:
     """Анализирует выгодность категорий повышенного кешбэка за указанный месяц и год."""
     logger.debug(f"Начало анализа кешбэка за {month}.{year}. Всего транзакций: {len(data)}")
-    cashback_by_category = {}
+    cashback_by_category: Dict[str, float] = {}
     for transaction in data:
         # Пропускаем транзакции без кешбэка или с нулевым кешбэком
         cashback = transaction.get("Бонусы (включая кэшбэк)")
-        if cashback is None or cashback == 0:
+        if not cashback:
             continue
 
         try:
@@ -57,7 +56,6 @@ def search_transactions(data: List[Dict[str, Any]], search_query: str) -> str:
     logger.debug(f"Начало поиска по запросу '{search_query}'. Всего транзакций: {len(data)}")
     results = []
     search_lower = search_query.lower()
-    found_count = 0
 
     for transaction in data:
         description = str(transaction.get("Описание", "")).lower()
@@ -65,6 +63,5 @@ def search_transactions(data: List[Dict[str, Any]], search_query: str) -> str:
 
         if search_lower in description or search_lower in category:
             results.append(transaction)
-            found_count += 1
-    logger.info(f"Поиск завершен. Найдено совпадений: {found_count}")
+    logger.info(f"Поиск завершен. Найдено совпадений: {len(results)}")
     return json.dumps(results, ensure_ascii=False, default=str)

@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import pytest
 
@@ -49,7 +49,9 @@ def empty_transactions() -> List[Dict[str, Any]]:
         (2019, 1, None),  # теперь ожидаем None для пустого результата
     ],
 )
-def test_analyze_cashback_categories(sample_transactions, year, month, expected):
+def test_analyze_cashback_categories(
+    sample_transactions: List[Dict[str, Any]], year: int, month: int, expected: Dict[str, int] | None
+) -> None:
     """Параметризованный тест для analyze_cashback_categories"""
     result = analyze_cashback_categories(sample_transactions, year, month)
     if expected is None:
@@ -58,7 +60,7 @@ def test_analyze_cashback_categories(sample_transactions, year, month, expected)
         assert json.loads(result) == expected
 
 
-def test_analyze_cashback_categories_empty(empty_transactions):
+def test_analyze_cashback_categories_empty(empty_transactions: List[Dict[str, Any]]) -> None:
     """Тест с пустыми входными данными"""
     result = analyze_cashback_categories(empty_transactions, 2018, 1)
     assert result is None  # пустой словарь -> None
@@ -73,7 +75,9 @@ def test_analyze_cashback_categories_empty(empty_transactions):
         ("Ресторан", 0, []),
     ],
 )
-def test_search_transactions(sample_transactions, query, expected_count, expected_descriptions):
+def test_search_transactions(
+    sample_transactions: List[Dict[str, Any]], query: str, expected_count: int, expected_descriptions: List[str]
+) -> None:
     """Параметризованный тест для search_transactions"""
     result = search_transactions(sample_transactions, query)
     result_list = json.loads(result)
@@ -81,7 +85,7 @@ def test_search_transactions(sample_transactions, query, expected_count, expecte
     assert [t["Описание"] for t in result_list] == expected_descriptions
 
 
-def test_search_transactions_empty(empty_transactions):
+def test_search_transactions_empty(empty_transactions: List[Dict[str, Any]]) -> None:
     """Тест поиска с пустыми данными"""
     result = search_transactions(empty_transactions, "АЗС")
     assert json.loads(result) == []

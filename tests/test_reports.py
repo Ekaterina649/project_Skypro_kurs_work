@@ -1,4 +1,5 @@
 import json
+from typing import Any
 
 import pandas as pd
 import pytest
@@ -7,7 +8,7 @@ from src.reports import save_report, spending_by_category
 
 
 @pytest.fixture
-def transactions_df():
+def transactions_df() -> pd.DataFrame:
     """Создаем тестовый DataFrame с транзакциями."""
     data = [
         {
@@ -57,13 +58,13 @@ def transactions_df():
     return df
 
 
-def test_transactions_found(transactions_df):
+def test_transactions_found(transactions_df: pd.DataFrame) -> None:
     """Проверяем, что транзакции возвращаются корректно, если они есть."""
     result = spending_by_category(transactions_df, "Детский сад", "10.01.2018 21:31:46")
     assert len(result) == 3
 
 
-def test_transactions_not_found(transactions_df):
+def test_transactions_not_found(transactions_df: pd.DataFrame) -> None:
     """Проверяем, что возвращается сообщение при отсутствии транзакций."""
     result = spending_by_category(transactions_df, "Еда", "10.01.2018 21:31:46")
 
@@ -71,7 +72,7 @@ def test_transactions_not_found(transactions_df):
     assert "не найдены" in result
 
 
-def test_empty_dataframe():
+def test_empty_dataframe() -> None:
     """Проверяем поведение на пустом DataFrame."""
     empty_df = pd.DataFrame(columns=["Дата операции", "Сумма платежа", "Кэшбэк", "Описание", "Категория", "Статус"])
     result = spending_by_category(empty_df, "Детский сад", "10.01.2018 21:31:46")
@@ -81,7 +82,7 @@ def test_empty_dataframe():
 
 
 @pytest.fixture
-def sample_df():
+def sample_df() -> pd.DataFrame:
     data = [
         {
             "Дата операции": "01.01.2023 12:00:00",
@@ -95,13 +96,13 @@ def sample_df():
     return pd.DataFrame(data)
 
 
-def test_save_report_creates_file(tmp_path, sample_df):
+def test_save_report_creates_file(tmp_path: Any, sample_df: pd.DataFrame) -> None:
     """Проверяем, что декоратор создает JSON-файл и записывает данные."""
 
     test_file = tmp_path / "test_report.json"
 
     @save_report(filename=test_file)
-    def dummy_report():
+    def dummy_report() -> pd.DataFrame:
         return sample_df
 
     result = dummy_report()

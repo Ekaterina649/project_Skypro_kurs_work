@@ -2,12 +2,11 @@ import json
 import logging
 from functools import wraps
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Callable, Optional, TypeVar, cast
 
 import pandas as pd
 
-from src.config import DATA_DIR, LOGS_DIR
-from src.utils import reader_from_excel
+from src.config import LOGS_DIR
 
 logger = logging.getLogger("reports")
 logger.setLevel(logging.DEBUG)
@@ -16,13 +15,15 @@ file_formatter = logging.Formatter("%(asctime)s - %(module)s - %(levelname)s - %
 file_handler.setFormatter(file_formatter)
 logger.addHandler(file_handler)
 
+F = TypeVar("F", bound=Callable[..., Any])
 
-def save_report(filename: Optional[str] = None):
+
+def save_report(filename: Optional[str] = None) -> Callable[[F], F]:
     """Декоратор для сохранения результата функции отчета в JSON-файл."""
 
-    def decorator(func):
+    def decorator(func: F) -> F:
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             result = func(*args, **kwargs)
             report_filename = (
                 Path(__file__).resolve().parent.parent / filename
@@ -53,7 +54,7 @@ def save_report(filename: Optional[str] = None):
 
             return result
 
-        return wrapper
+        return cast(F, wrapper)
 
     return decorator
 

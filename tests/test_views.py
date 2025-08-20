@@ -1,3 +1,4 @@
+from typing import Any, Dict, List
 from unittest.mock import patch
 
 import pytest
@@ -6,7 +7,7 @@ from src.views import main_views
 
 
 @pytest.fixture
-def mock_transactions():
+def mock_transactions() -> List[Dict[str, Any]]:
     return [
         {
             "Дата операции": "01.01.2023 12:00:00",
@@ -20,7 +21,7 @@ def mock_transactions():
 
 
 @pytest.fixture
-def mock_user_settings():
+def mock_user_settings() -> Dict[str, List[str]]:
     return {
         "user_currencies": ["USD", "EUR"],
         "user_stocks": ["AAPL", "GOOGL"],
@@ -36,17 +37,17 @@ def mock_user_settings():
 @patch("src.views.get_time_based_greeting")
 @patch("src.views.reader_from_excel")
 def test_main_views_success(
-    mock_reader,
-    mock_greeting,
-    mock_filter,
-    mock_cards,
-    mock_top,
-    mock_rates,
-    mock_stocks,
-    mock_settings,
-    mock_transactions,
-    mock_user_settings,
-):
+    mock_reader: Any,
+    mock_greeting: Any,
+    mock_filter: Any,
+    mock_cards: Any,
+    mock_top: Any,
+    mock_rates: Any,
+    mock_stocks: Any,
+    mock_settings: Any,
+    mock_transactions: List[Dict[str, Any]],
+    mock_user_settings: Dict[str, List[str]],
+) -> None:
     # Настраиваем моки
     mock_reader.return_value = mock_transactions
     mock_greeting.return_value = "Добрый день"

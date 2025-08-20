@@ -1,78 +1,54 @@
-import pandas as pd
-from datetime import datetime
+import os
+from typing import Any, Dict, List
 
-from src.config import DATA_DIR
+import pandas as pd
+from dotenv import load_dotenv
+
+from src.reports import spending_by_category
+from src.services import analyze_cashback_categories, search_transactions
+from src.user_interaction import (ask_month, ask_year, get_category_input, get_date_input, get_end_date,
+                                  get_search_query)
 from src.utils import reader_from_excel
 from src.views import main_views
-from src.services import analyze_cashback_categories, search_transactions
-from src.reports import spending_by_category
+
+load_dotenv()
 
 
-def show_dashboard(transactions):
+def show_dashboard(transactions: List[Dict[str, Any]]) -> None:
     """Главная страница: приветствие, карты, топ-5 трат, валюты, акции"""
     while True:
         try:
-            time_user = input("Введите дату (YYYY-MM-DD HH:MM:SS) или Enter для текущей: ").strip()
-            if not time_user:
-                time_user = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            datetime.strptime(time_user, "%Y-%m-%d %H:%M:%S")  # проверка формата
+            time_user = get_date_input("Введите дату (YYYY-MM-DD HH:MM:SS) или Enter для текущей: ")
             result = main_views(time_user)
             print("\n=== Главная страница ===")
             print(result)
             break
-        except ValueError:
-            print("Ошибка: неверный формат даты. Попробуйте снова.")
         except Exception as e:
             print(f"Ошибка при формировании главной страницы: {e}")
             break
 
 
-def cashback_analysis(transactions):
+def cashback_analysis(transactions: List[Dict[str, Any]]) -> None:
     """Анализ кешбэка за месяц"""
-    while True:
-        try:
-            while True:
-                year_input = input("Введите год (например, 2025): ").strip()
-                if not year_input.isdigit():
-                    print("Ошибка: нужно ввести число для года.")
-                    continue
-                year = int(year_input)
-                if year < 1900 or year > 2026:
-                    print("Ошибка: введите реальный год (1900–2026).")
-                    continue
-                break
+    year = ask_year()
+    month = ask_month()
+    try:
+        result = analyze_cashback_categories(transactions, year, month)
+    except Exception as e:
+        print(f"Ошибка при анализе кешбэка: {e}")
+        return
 
-            # ввод месяца
-            while True:
-                month_input = input("Введите месяц (1-12): ").strip()
-                if not month_input.isdigit():
-                    print("Ошибка: нужно ввести число для месяца.")
-                    continue
-                month = int(month_input)
-                if not (1 <= month <= 12):
-                    print("Месяц должен быть от 1 до 12.")
-                    continue
-                break
-
-            result = analyze_cashback_categories(transactions, year, month)
-            print("\n=== Анализ кешбэка ===")
-            if not result:
-                print("Ничего не нашлось по заданной дате")
-            else:
-                print(result)
-            break
-        except Exception as e:
-            print(f"Ошибка при анализе кешбэка: {e}")
-            break
+    print("\n=== Анализ кешбэка ===")
+    if not result:
+        print("Ничего не нашлось по заданной дате")
+    else:
+        print(result)
 
 
-def transaction_search(transactions):
+def transaction_search(transactions: List[Dict[str, Any]]) -> None:
     """Поиск по операциям"""
     try:
-        query = input("Введите слово или фразу для поиска: ").strip()
-        if not query:
-            print("Ошибка: строка поиска не может быть пустой.")
-            return
+        query = get_search_query()
         result = search_transactions(transactions, query)
         print("\n=== Результаты поиска ===")
         print(result)
@@ -80,24 +56,12 @@ def transaction_search(transactions):
         print(f"Ошибка при поиске транзакций: {e}")
 
 
-def category_report(transactions):
+def category_report(transactions: List[Dict[str, Any]]) -> None:
     """Отчёт по категории за 3 месяца"""
     try:
         df = pd.DataFrame(transactions)
-        category = input("Введите категорию (например, Продукты): ").strip()
-        if not category:
-            print("Ошибка: категория не может быть пустой.")
-            return
-        date = input("Введите конечную дату (ДД.ММ.ГГГГ) или Enter для текущей: ").strip()
-        if date:
-            try:
-                datetime.strptime(date, "%d.%m.%Y")  # проверка формата
-            except ValueError:
-                print("Ошибка: неверный формат даты, используем текущую.")
-                date = None
-        else:
-            date = None
-
+        category = get_category_input()
+        date = get_end_date()
         result = spending_by_category(df, category=category, date=date)
         print("\n=== Отчёт по категории ===")
         print(result)
@@ -105,11 +69,14 @@ def category_report(transactions):
         print(f"Ошибка при формировании отчёта: {e}")
 
 
-def main():
+def main() -> None:
     print("Здравствуйте! Добро пожаловать в финансовый помощник")
 
     try:
-        filepath = DATA_DIR / "operations.xlsx"
+        filepath = os.getenv("OPERATIONS_DIR")
+        if filepath is None:
+            print("Ошибка: переменная окружения OPERATIONS_DIR не установлена")
+            return
         transactions = reader_from_excel(filepath)  # список словарей
     except Exception as e:
         print(f"Ошибка загрузки данных: {e}")
